@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('laporan_keuangans', function (Blueprint $table) {
             $table->id();
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->decimal('total_pendapatan', 15, 2)->default(0);
+            $table->decimal('total_biaya', 15, 2)->default(0);
             $table->timestamps();
         });
     }

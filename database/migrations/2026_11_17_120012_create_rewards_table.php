@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('rewards', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_customer');
+            $table->foreign('id_customer')->references('id_customer')->on('customers');
+            $table->unsignedBigInteger('id_aturan_loyalty');
+            $table->foreign('id_aturan_loyalty')->references('id')->on('aturan_loyalties');
+            $table->integer('poin_digunakan');
+            $table->enum('status', ['pending', 'digunakan', 'kadaluarsa'])->default('pending');
             $table->timestamps();
         });
     }

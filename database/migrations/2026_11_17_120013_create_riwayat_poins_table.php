@@ -13,6 +13,15 @@ return new class extends Migration
     {
         Schema::create('riwayat_poins', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_customer');
+            $table->foreign('id_customer')->references('id_customer')->on('customers');
+            $table->unsignedBigInteger('id_aturan_loyalty')->nullable();
+            $table->foreign('id_aturan_loyalty')->references('id')->on('aturan_loyalties');
+            $table->unsignedBigInteger('id_reward')->nullable();
+            $table->foreign('id_reward')->references('id')->on('rewards');
+            $table->enum('tipe', ['tambah', 'kurang']);
+            $table->integer('poin');
+            $table->text('keterangan')->nullable();
             $table->timestamps();
         });
     }

@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('absensis', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_karyawan');
+            $table->foreign('id_karyawan')->references('id_karyawan')->on('karyawans');
+            $table->enum('status', ['hadir', 'izin', 'sakit', 'alpha']);
+            $table->timestamp('jam_masuk')->nullable();
+            $table->timestamp('jam_keluar')->nullable();
+            $table->date('tanggal');
             $table->timestamps();
         });
     }

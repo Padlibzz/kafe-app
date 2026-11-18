@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('notifikasis', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_customer')->nullable();
+            $table->foreign('id_customer')->references('id_customer')->on('customers');
+            $table->unsignedBigInteger('id_pesanan')->nullable();
+            $table->foreign('id_pesanan')->references('id')->on('pesanans');
+            $table->string('judul');
+            $table->text('isi');
+            $table->boolean('status_baca')->default(false);
             $table->timestamps();
         });
     }

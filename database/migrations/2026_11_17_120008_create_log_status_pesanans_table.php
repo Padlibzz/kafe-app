@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('log_status_pesanans', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_pesanan');
+            $table->foreign('id_pesanan')->references('id')->on('pesanans');
+            $table->string('status_lama');
+            $table->string('status_baru');
+            $table->string('created_by')->nullable();
             $table->timestamps();
         });
     }

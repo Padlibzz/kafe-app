@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('pembayarans', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_pesanan');
+            $table->foreign('id_pesanan')->references('id')->on('pesanans');
+            $table->enum('metode', ['tunai', 'kartu', 'transfer']);
+            $table->decimal('nominal', 15, 2);
+            $table->enum('status', ['pending', 'sukses', 'gagal']);
             $table->timestamps();
         });
     }

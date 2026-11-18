@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('pesanans', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_customer')->nullable();
+            $table->foreign('id_customer')->references('id_customer')->on('customers');
+            $table->unsignedBigInteger('id_meja')->nullable();
+            $table->foreign('id_meja')->references('id_meja')->on('mejas');
+            $table->enum('status', ['pending', 'dibuat', 'dibayar', 'diproses', 'selesai', 'dibatalkan']);
+            $table->decimal('total_harga', 15, 2);
+            $table->text('catatan')->nullable();
             $table->timestamps();
         });
     }
