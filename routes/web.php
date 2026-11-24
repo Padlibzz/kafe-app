@@ -4,6 +4,7 @@ use App\Models\Absensi;
 use App\Models\Admin;
 use App\Models\AturanLoyalty;
 use App\Models\Customer;
+use App\Models\Karyawan;
 use App\Models\LaporanKeuangan;
 use App\Models\LogStatusPesanan;
 use App\Models\Meja;
@@ -18,9 +19,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-Route::get('/', fn () => session()->has('admin_id')
-    ? redirect()->route('admin.dashboard')
-    : redirect()->route('admin.login'));
+Route::get('/', fn () => view('welcome', [
+    'menus' => Menu::query()->where('ketersediaan', true)->orderBy('nama_menu')->limit(6)->get(),
+]))->name('home');
 
 Route::get('/admin/login', function () {
     if (Admin::find(session('admin_id'))) {
@@ -30,16 +31,50 @@ Route::get('/admin/login', function () {
     return view('admin.login');
 })->name('admin.login');
 Route::post('/admin/login', function (Request $request) {
-    $credentials = $request->validate(['username' => ['required', 'string'], 'password' => ['required', 'string']]);
-    $admin = Admin::where('username', $credentials['username'])->first();
-    if (! $admin || ! Hash::check($credentials['password'], $admin->password)) {
-        return back()->withErrors(['username' => 'Username atau password salah.'])->onlyInput('username');
+    $credentials = $request->validate([
+        'account_type' => ['required', 'in:admin,employee,customer'],
+        'username' => ['required', 'string'],
+        'password' => ['required', 'string'],
+    ]);
+    $account = match ($credentials['account_type']) {
+        'admin' => Admin::where('username', $credentials['username'])->first(),
+        'employee' => Karyawan::where('username', $credentials['username'])->first(),
+        'customer' => Customer::where('email', $credentials['username'])->first(),
+    };
+
+    if (! $account || ! Hash::check($credentials['password'], $account->password)) {
+        return redirect()->route('admin.login')->withErrors(['username' => 'Akun atau kata sandi tidak sesuai.'])->withInput(['account_type' => $credentials['account_type'], 'username' => $credentials['username']]);
     }
     $request->session()->regenerate();
-    $request->session()->put('admin_id', $admin->getKey());
+    if ($credentials['account_type'] === 'admin') {
+        $request->session()->put('admin_id', $account->getKey());
+    }
 
-    return redirect()->route('admin.dashboard');
+    return match ($credentials['account_type']) {
+        'admin' => redirect()->route('admin.dashboard'),
+        'employee' => redirect()->route('admin.login')->with('account_notice', 'Akun karyawan berhasil diverifikasi. Area akun karyawan belum tersedia.'),
+        'customer' => redirect()->route('admin.login')->with('account_notice', 'Akun pelanggan berhasil diverifikasi. Area akun pelanggan belum tersedia.'),
+    };
 })->name('admin.login.submit');
+
+Route::get('/register', fn () => view('customer.register'))->name('customer.register');
+Route::post('/register', function (Request $request) {
+    $data = $request->validate([
+        'nama' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'max:255', 'unique:customers,email'],
+        'password' => ['required', 'string', 'min:8', 'confirmed'],
+        'terms' => ['accepted'],
+    ]);
+
+    $customer = new Customer;
+    $customer->nama = $data['nama'];
+    $customer->email = $data['email'];
+    $customer->password = $data['password'];
+    $customer->saldo_poin = 0;
+    $customer->save();
+
+    return redirect()->route('customer.register')->with('registration_success', true);
+})->name('customer.register.submit');
 
 Route::middleware('admin')->prefix('admin')->group(function () {
     Route::get('/dashboard', function () {

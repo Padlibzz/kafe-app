@@ -42,10 +42,10 @@ class AdminLoyaltyTest extends TestCase
             ->assertSee('5')
             ->assertSee('20')
             ->assertSee('Aturan Poin & Loyalty')
-            ->assertSee('Aturan yang Berlaku')
-            ->assertSee('Penukaran Reward')
-            ->assertSee('Riwayat Poin Terbaru')
-            ->assertSee('Riwayat Penukaran Reward');
+            ->assertSee('Aturan perolehan poin')
+            ->assertSee('Status penukaran')
+            ->assertSee('Aktivitas poin terbaru')
+            ->assertSee('Riwayat penukaran reward');
     }
 
     public function test_admin_sees_point_and_reward_history_without_credentials(): void
@@ -90,7 +90,7 @@ class AdminLoyaltyTest extends TestCase
             ->assertOk()
             ->assertSee('Pelanggan Uji')
             ->assertSee('Pembelian uji')
-            ->assertSee('Riwayat Penukaran Reward')
+            ->assertSee('Riwayat penukaran reward')
             ->assertSee('10')
             ->assertDontSee('private@example.test')
             ->assertDontSee('private-password');

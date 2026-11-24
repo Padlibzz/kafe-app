@@ -17,6 +17,17 @@ class AdminDashboardTest extends TestCase
         $this->get(route('admin.dashboard'))->assertRedirect(route('admin.login'));
     }
 
+    public function test_customer_and_employee_sessions_do_not_authorize_admin_dashboard(): void
+    {
+        $this->withSession(['customer_id' => 99])
+            ->get(route('admin.dashboard'))
+            ->assertRedirect(route('admin.login'));
+
+        $this->withSession(['karyawan_id' => 99])
+            ->get(route('admin.dashboard'))
+            ->assertRedirect(route('admin.login'));
+    }
+
     public function test_admin_sees_dashboard_totals_and_top_menu_from_saved_data(): void
     {
         $admin = new Admin;
