@@ -1,0 +1,10 @@
+- main [ref=e2]:
+  - generic [aria-hidden] [ref=e3]: ☕
+  - heading "Selamat datang" [level=1] [ref=e4]
+  - paragraph [ref=e5]: Masuk untuk mengelola pesanan kedai.
+  - generic [ref=e6]:
+    - generic [ref=e7]: Username
+    - textbox "Username" [ref=e8]
+    - generic [ref=e9]: Password
+    - textbox "Password" [ref=e10]
+    - button "Masuk" [ref=e11] [cursor=pointer]

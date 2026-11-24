@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['nomor_meja', 'kode_qr'])]
 class Meja extends Model
 {
     protected $table = 'mejas';
+
     protected $primaryKey = 'id_meja';
+
     protected $keyType = 'int';
 
-    public function pesanans(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function pesanans(): HasMany
     {
         return $this->hasMany(Pesanan::class, 'id_meja');
     }
