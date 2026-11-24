@@ -39,7 +39,11 @@ class AdminCustomersTest extends TestCase
             ->assertSee('42')
             ->assertDontSee('private1@example.test')
             ->assertDontSee('customer-secret')
-            ->assertSee('Pelanggan')
+            ->assertSee('Manajemen Pelanggan')
+            ->assertSee('Database Pelanggan')
+            ->assertSee('Ringkasan Program Poin')
+            ->assertSee('Tier belum ditetapkan')
+            ->assertDontSee('Roaster')
             ->assertSee('Customer 15')
             ->assertSee('pagination');
 

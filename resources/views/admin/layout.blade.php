@@ -16,11 +16,12 @@
         aside { position:fixed; inset:0 auto 0 0; z-index:5; width:252px; padding:27px 18px; background:#fffdf9; border-right:1px solid var(--line); display:flex; flex-direction:column; overflow-y:auto; }
         .brand { display:flex; align-items:center; gap:12px; padding:0 10px 28px; font:700 22px Georgia,serif; }
         .brand-mark { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:#fff; background:var(--coffee); font:700 17px Georgia,serif; }
-        .nav-label { margin:13px 10px 8px; color:#a09489; font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; }
+        .nav-label { margin:18px 10px 8px; color:#a09489; font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; }
         .nav-link { display:flex; align-items:center; gap:12px; min-height:44px; margin:2px 0; padding:0 12px; border-radius:9px; color:#695c51; }
         .nav-link:hover { background:#f5f0e9; transform:translateX(2px); }
         .nav-link:focus-visible { background:#f5f0e9; }
         .nav-link.active { color:#563a28; background:#f2e9df; font-weight:650; }
+        .nav-link .nav-badge { margin-left:auto; padding:3px 7px; color:#5b704e; background:#edf3e9; border-radius:999px; font-size:9px; font-weight:700; }
         .nav-icon { width:21px; text-align:center; font-size:17px; }
         .nav-link.disabled { color:#b6aaa0; cursor:default; }
         .soon { margin-left:auto; font-size:10px; }
@@ -59,7 +60,9 @@
 <a class="skip-link" href="#main-content">Lewati ke konten</a>
 <div class="shell">
     <aside aria-label="Navigasi admin">
-        <a class="brand" href="{{ route('admin.orders') }}"><span class="brand-mark">C</span><span>Chōgō</span></a>
+        <a class="brand" href="{{ route('admin.dashboard') }}"><span class="brand-mark">C</span><span>Chōgō</span></a>
+        <div class="nav-label">Ringkasan</div>
+        <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}"><span class="nav-icon" aria-hidden="true">⌂</span>Dashboard Utama</a>
         <div class="nav-label">Operasional</div>
         <a class="nav-link {{ request()->routeIs('admin.orders') ? 'active' : '' }}" href="{{ route('admin.orders') }}"><span class="nav-icon" aria-hidden="true">▤</span>Pesanan</a>
         <a class="nav-link {{ request()->routeIs('admin.kds') ? 'active' : '' }}" href="{{ route('admin.kds') }}"><span class="nav-icon" aria-hidden="true">◷</span>KDS</a>

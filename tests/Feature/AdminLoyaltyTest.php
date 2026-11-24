@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Admin;
 use App\Models\AturanLoyalty;
+use App\Models\Customer;
+use App\Models\Reward;
+use App\Models\RiwayatPoin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -38,7 +41,59 @@ class AdminLoyaltyTest extends TestCase
             ->assertSee('Poin diberikan setiap transaksi')
             ->assertSee('5')
             ->assertSee('20')
-            ->assertSee('Loyalty');
+            ->assertSee('Aturan Poin & Loyalty')
+            ->assertSee('Aturan yang Berlaku')
+            ->assertSee('Penukaran Reward')
+            ->assertSee('Riwayat Poin Terbaru')
+            ->assertSee('Riwayat Penukaran Reward');
+    }
+
+    public function test_admin_sees_point_and_reward_history_without_credentials(): void
+    {
+        $admin = new Admin;
+        $admin->nama = 'Admin';
+        $admin->username = 'admin';
+        $admin->password = 'secret';
+        $admin->save();
+
+        $customer = new Customer;
+        $customer->nama = 'Pelanggan Uji';
+        $customer->email = 'private@example.test';
+        $customer->password = 'private-password';
+        $customer->saldo_poin = 40;
+        $customer->save();
+
+        $rule = new AturanLoyalty;
+        $rule->nama = 'Aturan Uji';
+        $rule->deskripsi = 'Aturan uji';
+        $rule->poin_per_transaksi = 5;
+        $rule->minimal_poin = 0;
+        $rule->save();
+
+        $point = new RiwayatPoin;
+        $point->id_customer = $customer->getKey();
+        $point->id_aturan_loyalty = $rule->getKey();
+        $point->tipe = 'tambah';
+        $point->poin = 5;
+        $point->keterangan = 'Pembelian uji';
+        $point->save();
+
+        $reward = new Reward;
+        $reward->id_customer = $customer->getKey();
+        $reward->id_aturan_loyalty = $rule->getKey();
+        $reward->poin_digunakan = 10;
+        $reward->status = 'pending';
+        $reward->save();
+
+        $this->withSession(['admin_id' => $admin->getKey()])
+            ->get(route('admin.loyalty'))
+            ->assertOk()
+            ->assertSee('Pelanggan Uji')
+            ->assertSee('Pembelian uji')
+            ->assertSee('Riwayat Penukaran Reward')
+            ->assertSee('10')
+            ->assertDontSee('private@example.test')
+            ->assertDontSee('private-password');
     }
 
     public function test_admin_can_paginate_loyalty_rules(): void

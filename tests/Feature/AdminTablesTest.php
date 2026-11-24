@@ -19,6 +19,35 @@ class AdminTablesTest extends TestCase
         $this->assertDatabaseCount('mejas', 0);
     }
 
+    public function test_admin_sees_table_create_form_and_generated_token_explanation(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->get(route('admin.tables.create'))
+            ->assertOk()
+            ->assertSee('Tambah Meja Baru')
+            ->assertSee('Informasi Meja')
+            ->assertSee('Nomor atau nama meja')
+            ->assertSee('Token QR akan dibuat otomatis')
+            ->assertSee('Simpan Meja');
+    }
+
+    public function test_admin_sees_existing_table_data_and_update_preserves_token(): void
+    {
+        $this->actingAsAdmin();
+        $table = new Meja;
+        $table->nomor_meja = 'Meja Teras';
+        $table->kode_qr = 'preserved-token';
+        $table->save();
+
+        $this->get(route('admin.tables.edit', $table))
+            ->assertOk()
+            ->assertSee('Ubah Data Meja')
+            ->assertSee('Meja Teras')
+            ->assertSee('preserved-token')
+            ->assertSee('Simpan Perubahan Meja');
+    }
+
     public function test_admin_can_create_table_with_generated_qr_token(): void
     {
         $this->actingAsAdmin();
@@ -45,6 +74,24 @@ class AdminTablesTest extends TestCase
 
         $this->assertSame('Meja 2', $table->fresh()->nomor_meja);
         $this->assertSame('stable-token', $table->fresh()->kode_qr);
+    }
+
+    public function test_admin_sees_table_cards_and_search_instead_of_fake_occupancy_or_scannable_qr(): void
+    {
+        $this->actingAsAdmin();
+        $table = new Meja;
+        $table->nomor_meja = 'Window 01';
+        $table->kode_qr = 'saved-token';
+        $table->save();
+
+        $this->get(route('admin.tables'))
+            ->assertOk()
+            ->assertSee('Manajemen Meja & QR')
+            ->assertSee('Window 01')
+            ->assertSee('Token · saved-token')
+            ->assertSee('tables-search')
+            ->assertSee('bukan QR yang dapat dipindai.')
+            ->assertDontSee('16 Meja Terisi');
     }
 
     public function test_admin_cannot_create_table_with_duplicate_number(): void

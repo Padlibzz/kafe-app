@@ -36,8 +36,9 @@ class AdminFinanceReportsTest extends TestCase
             ->assertOk()
             ->assertSee('01/11/2026')
             ->assertSee('15/11/2026')
-            ->assertSee('1250.50')
-            ->assertSee('450.25');
+            ->assertSee('Rp1.251')
+            ->assertSee('Rp450')
+            ->assertSee('Ringkasan pada halaman ini');
 
         $this->assertSame(['id', 'start_date', 'end_date', 'total_pendapatan', 'total_biaya', 'created_at'], array_keys($response->viewData('reports')->items()[0]->getAttributes()));
     }

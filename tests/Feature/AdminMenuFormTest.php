@@ -80,6 +80,48 @@ class AdminMenuFormTest extends TestCase
         Storage::disk('public')->assertExists('menus/current.jpg');
     }
 
+    public function test_admin_can_toggle_menu_availability(): void
+    {
+        $admin = $this->createAdmin();
+        $menu = new Menu;
+        $menu->nama_menu = 'Kopi Susu';
+        $menu->deskripsi = 'Kopi susu test';
+        $menu->harga = 25000;
+        $menu->foto = 'menus/current.jpg';
+        $menu->ketersediaan = true;
+        $menu->save();
+
+        $this->withSession(['admin_id' => $admin->getKey()])
+            ->patch(route('admin.menus.availability', $menu))
+            ->assertRedirect(route('admin.menus'));
+
+        $this->assertFalse((bool) $menu->fresh()->ketersediaan);
+    }
+
+    public function test_admin_sees_menu_catalog_with_search_stock_filters_and_saved_menu_data(): void
+    {
+        $admin = $this->createAdmin();
+        $menu = new Menu;
+        $menu->nama_menu = 'Kopi Gula Aren';
+        $menu->deskripsi = 'Espresso dengan susu dan gula aren';
+        $menu->harga = 28000;
+        $menu->foto = 'menus/kopi-gula-aren.jpg';
+        $menu->ketersediaan = true;
+        $menu->save();
+
+        $this->withSession(['admin_id' => $admin->getKey()])
+            ->get(route('admin.menus'))
+            ->assertOk()
+            ->assertSee('Katalog Menu & Manajemen Harga')
+            ->assertSee('Kopi Gula Aren')
+            ->assertSee('Espresso dengan susu dan gula aren')
+            ->assertSee('Rp28.000')
+            ->assertSee('data-stock-filter="available"', false)
+            ->assertSee('Tidak tersedia')
+            ->assertDontSee('HPP:')
+            ->assertDontSee('Best Seller');
+    }
+
     private function createAdmin(): Admin
     {
         $admin = new Admin;

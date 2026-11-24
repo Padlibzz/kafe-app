@@ -9,6 +9,8 @@ use App\Models\LogStatusPesanan;
 use App\Models\Meja;
 use App\Models\Menu;
 use App\Models\Pesanan;
+use App\Models\Reward;
+use App\Models\RiwayatPoin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -17,12 +19,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 Route::get('/', fn () => session()->has('admin_id')
-    ? redirect()->route('admin.orders')
+    ? redirect()->route('admin.dashboard')
     : redirect()->route('admin.login'));
 
 Route::get('/admin/login', function () {
     if (Admin::find(session('admin_id'))) {
-        return redirect()->route('admin.orders');
+        return redirect()->route('admin.dashboard');
     }
 
     return view('admin.login');
@@ -36,11 +38,30 @@ Route::post('/admin/login', function (Request $request) {
     $request->session()->regenerate();
     $request->session()->put('admin_id', $admin->getKey());
 
-    return redirect()->route('admin.orders');
+    return redirect()->route('admin.dashboard');
 })->name('admin.login.submit');
 
 Route::middleware('admin')->prefix('admin')->group(function () {
-    Route::get('/orders', fn () => view('admin.orders', ['orders' => Pesanan::with(['customer', 'meja'])->latest()->paginate(15)]))->name('admin.orders');
+    Route::get('/dashboard', function () {
+        $orderCounts = Pesanan::query()->whereDate('created_at', today())->selectRaw('status, COUNT(*) as aggregate')->groupBy('status')->pluck('aggregate', 'status');
+        $todayRevenue = Pesanan::query()->whereDate('created_at', today())->whereIn('status', ['dibayar', 'diproses', 'selesai'])->sum('total_harga');
+        $topMenus = DB::table('detail_pesanans')
+            ->join('menus', 'menus.id_menu', '=', 'detail_pesanans.id_menu')
+            ->join('pesanans', 'pesanans.id', '=', 'detail_pesanans.id_pesanan')
+            ->whereDate('pesanans.created_at', today())
+            ->whereNotIn('pesanans.status', ['dibatalkan'])
+            ->select('menus.nama_menu', DB::raw('SUM(detail_pesanans.jumlah) as total_terjual'))
+            ->groupBy('menus.id_menu', 'menus.nama_menu')
+            ->orderByDesc('total_terjual')
+            ->limit(5)
+            ->get();
+        $latestOrders = Pesanan::query()->with(['customer:id_customer,nama', 'meja:id_meja,nomor_meja'])->latest()->limit(6)->get();
+        $unavailableMenuCount = Menu::query()->where('ketersediaan', false)->count();
+        $unavailableMenus = Menu::query()->where('ketersediaan', false)->orderBy('nama_menu')->limit(5)->get(['id_menu', 'nama_menu']);
+
+        return view('admin.dashboard', compact('orderCounts', 'todayRevenue', 'topMenus', 'latestOrders', 'unavailableMenuCount', 'unavailableMenus'));
+    })->name('admin.dashboard');
+    Route::get('/orders', fn () => view('admin.orders', ['orders' => Pesanan::with(['customer:id_customer,nama', 'meja:id_meja,nomor_meja'])->latest()->paginate(15)]))->name('admin.orders');
     Route::get('/kds', function (Request $request) {
         $status = $request->validate(['status' => ['sometimes', 'in:pending,dibuat,diproses,dibayar,selesai']])['status'] ?? null;
         $sort = $request->validate(['sort' => ['sometimes', 'in:lama,baru']])['sort'] ?? 'lama';
@@ -128,13 +149,21 @@ Route::middleware('admin')->prefix('admin')->group(function () {
         return redirect()->route('admin.menus');
     })->name('admin.menus.update');
     Route::patch('/menus/{menu}/availability', function (Menu $menu) {
-        $menu->update(['ketersediaan' => ! $menu->ketersediaan]);
+        $menu->ketersediaan = ! $menu->ketersediaan;
+        $menu->save();
 
         return redirect()->route('admin.menus');
     })->name('admin.menus.availability');
     Route::get('/tables', fn () => view('admin.tables', ['tables' => Meja::orderBy('nomor_meja')->paginate(15)]))->name('admin.tables');
     Route::get('/customers', fn () => view('admin.customers', ['customers' => Customer::query()->select(['id_customer', 'nama', 'saldo_poin'])->orderBy('nama')->orderBy('id_customer')->paginate(15)]))->name('admin.customers');
-    Route::get('/loyalty', fn () => view('admin.loyalty', ['rules' => AturanLoyalty::query()->select(['id', 'nama', 'deskripsi', 'poin_per_transaksi', 'minimal_poin'])->orderBy('nama')->paginate(15)]))->name('admin.loyalty');
+    Route::get('/loyalty', function () {
+        $rules = AturanLoyalty::query()->select(['id', 'nama', 'deskripsi', 'poin_per_transaksi', 'minimal_poin'])->orderBy('nama')->paginate(15);
+        $pointHistory = RiwayatPoin::query()->select(['id', 'id_customer', 'id_aturan_loyalty', 'id_reward', 'tipe', 'poin', 'keterangan', 'created_at'])->with(['customer:id_customer,nama', 'aturanLoyalty:id,nama', 'reward:id'])->latest()->limit(8)->get();
+        $rewardSummary = Reward::query()->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+        $rewardHistory = Reward::query()->select(['id', 'id_customer', 'id_aturan_loyalty', 'poin_digunakan', 'status', 'created_at'])->with(['customer:id_customer,nama', 'aturanLoyalty:id,nama'])->latest()->limit(8)->get();
+
+        return view('admin.loyalty', compact('rules', 'pointHistory', 'rewardSummary', 'rewardHistory'));
+    })->name('admin.loyalty');
     Route::get('/attendance', fn () => view('admin.attendance', ['attendances' => Absensi::query()->select(['id', 'id_karyawan', 'tanggal', 'status', 'jam_masuk', 'jam_keluar'])->with('karyawan:id_karyawan,nama')->orderByDesc('tanggal')->orderByDesc('id')->paginate(15)]))->name('admin.attendance');
     Route::get('/reports/finance', fn () => view('admin.finance-reports', ['reports' => LaporanKeuangan::query()->select(['id', 'start_date', 'end_date', 'total_pendapatan', 'total_biaya', 'created_at'])->orderByDesc('created_at')->orderByDesc('id')->paginate(15)]))->name('admin.finance-reports');
     Route::get('/tables/create', fn () => view('admin.table-form', ['table' => new Meja]))->name('admin.tables.create');
