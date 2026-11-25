@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\MenuCsvController;
 use App\Models\Absensi;
 use App\Models\Admin;
 use App\Models\AturanLoyalty;
@@ -134,6 +135,8 @@ Route::middleware('admin')->prefix('admin')->group(function () {
         return redirect()->route('admin.kds')->with('status', 'Status pesanan berhasil diperbarui.');
     })->name('admin.kds.transition');
     Route::get('/menus', fn () => view('admin.menus', ['menus' => Menu::orderBy('nama_menu')->paginate(15)]))->name('admin.menus');
+    Route::get('/menus/export', [MenuCsvController::class, 'export'])->name('admin.menus.export');
+    Route::post('/menus/import', [MenuCsvController::class, 'import'])->name('admin.menus.import');
     Route::get('/menus/create', fn () => view('admin.menu-form', ['menu' => new Menu]))->name('admin.menus.create');
     Route::post('/menus', function (Request $request) {
         $data = $request->validate([
