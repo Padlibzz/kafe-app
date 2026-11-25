@@ -117,9 +117,65 @@ class AdminMenuFormTest extends TestCase
             ->assertSee('Espresso dengan susu dan gula aren')
             ->assertSee('Rp28.000')
             ->assertSee('data-stock-filter="available"', false)
-            ->assertSee('Tidak tersedia')
+            ->assertSee('Habis')
             ->assertDontSee('HPP:')
             ->assertDontSee('Best Seller');
+    }
+
+    public function test_admin_can_import_valid_menu_csv_rows(): void
+    {
+        $admin = $this->createAdmin();
+        $csv = "nama_menu,deskripsi,harga,foto,ketersediaan\nKopi CSV,Menu dari CSV,28000,,1\n";
+
+        $this->withSession(['admin_id' => $admin->getKey()])
+            ->post(route('admin.menus.import'), [
+                'file' => UploadedFile::fake()->createWithContent('menus.csv', $csv),
+            ])
+            ->assertRedirect(route('admin.menus'))
+            ->assertSessionHas('status', '1 menu berhasil diimpor.');
+
+        $this->assertDatabaseHas('menus', [
+            'nama_menu' => 'Kopi CSV',
+            'harga' => 28000,
+            'ketersediaan' => true,
+        ]);
+    }
+
+    public function test_invalid_menu_csv_does_not_import_any_rows(): void
+    {
+        $admin = $this->createAdmin();
+        $csv = "nama_menu,deskripsi,harga,foto,ketersediaan\nKopi Valid,Menu valid,28000,,1\nKopi Invalid,Menu invalid,bukan-harga,,1\n";
+
+        $this->withSession(['admin_id' => $admin->getKey()])
+            ->from(route('admin.menus'))
+            ->post(route('admin.menus.import'), [
+                'file' => UploadedFile::fake()->createWithContent('menus.csv', $csv),
+            ])
+            ->assertRedirect(route('admin.menus'))
+            ->assertSessionHasErrors('file');
+
+        $this->assertDatabaseMissing('menus', ['nama_menu' => 'Kopi Valid']);
+        $this->assertDatabaseMissing('menus', ['nama_menu' => 'Kopi Invalid']);
+    }
+
+    public function test_admin_can_export_menu_csv_with_headers_and_saved_data(): void
+    {
+        $admin = $this->createAdmin();
+        $menu = new Menu;
+        $menu->nama_menu = 'Kopi CSV';
+        $menu->deskripsi = 'Menu ekspor';
+        $menu->harga = 28000;
+        $menu->foto = '';
+        $menu->ketersediaan = true;
+        $menu->save();
+
+        $response = $this->withSession(['admin_id' => $admin->getKey()])
+            ->get(route('admin.menus.export'))
+            ->assertOk()
+            ->assertDownload('menu-harga.csv');
+
+        $this->assertStringContainsString('nama_menu,deskripsi,harga,foto,ketersediaan', $response->streamedContent());
+        $this->assertStringContainsString('Kopi CSV,Menu ekspor,28000.00,,1', str_replace('"', '', $response->streamedContent()));
     }
 
     private function createAdmin(): Admin
